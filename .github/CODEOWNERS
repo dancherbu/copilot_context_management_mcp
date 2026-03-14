@@ -1,0 +1,16 @@
+# Default owner for the full repository
+* @dancherbu
+
+# Backend domain ownership
+/src/main/java/dev/dancherbu/ccm/mcp/ @dancherbu
+/src/main/java/dev/dancherbu/ccm/index/ @dancherbu
+/src/main/java/dev/dancherbu/ccm/vector/ @dancherbu
+
+# Frontend metrics UI ownership
+/src/main/resources/static/ @dancherbu
+
+# Dev infra and docs ownership
+/docker-compose.yml @dancherbu
+/Dockerfile @dancherbu
+/docs/ @dancherbu
+/README.md @dancherbu

@@ -99,3 +99,9 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 ## Decision Log
 
 - See `docs/implementation-decisions.md` for the implementation plan, each design decision, the reason behind it, and the validation status.
+
+## Collaboration
+
+- Contribution workflow and PR checklist: `CONTRIBUTING.md`
+- Branch protection setup guidance: `docs/branch-protection.md`
+- Default reviewer ownership: `.github/CODEOWNERS`
