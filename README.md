@@ -60,6 +60,9 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 - Tool: `assemble_execution_brief` for a downstream coding-model handoff with files to inspect, edit, test, and validate.
 - Tool: `find_similar_implementations` for locating local implementation patterns that should be reused instead of reinvented.
 - Tool: `get_project_readiness` for preflight gating decisions before invoking analysis tools.
+- Tool: `get_project_guidance` for discovering project standards, deployment instructions, and secret locations from local guidance files.
+- `get_project_guidance` prioritizes secret-file references declared in `copilot-instructions.md` (for example custom secret file paths) before fallback guidance-file patterns.
+- `get_project_guidance` also supports explicit instruction keys such as `secret_file: path/to/secrets.yml` (plus `secrets_file`, `secret_path`, `secrets_path`) for deterministic secret-location discovery.
 - Tool: `get_orchestration_plan` for a single-call package of readiness defaults plus argument templates for all core MCP context/planning tools.
 - Tool: `get_orchestration_bootstrap` for a super-call that returns readiness, orchestration templates, and the first lean context bundle when a project is ready.
 - `get_orchestration_bootstrap` also supports server-managed session state (`orchestrationSessionId`) persisted in Redis (with TTL) and can omit unchanged context payloads with `returnPayloadOnUnchanged=false`.
@@ -76,6 +79,7 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 6. For a one-call startup path, use `get_orchestration_plan` and consume `toolArgumentTemplates` directly.
 7. For a one-call startup plus first context payload, call `get_orchestration_bootstrap` with your task query.
 8. Reuse `orchestrationSessionId` returned by bootstrap so later calls can inherit prior context hashes and defaults.
+9. For instruction and operations context, call `get_project_guidance` before planning tools and reuse `ifNoneMatchGuidanceHash` on iterative calls.
 
 ## Tool Metrics
 
@@ -89,7 +93,8 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 - Planning and impact responses now include cache-trust metadata: `cacheHit`, `cacheAgeSec`, and `sourceOfTruth`.
 - Roundtrip timing can be measured at the transport layer with `curl -w '%{time_total}'` against the proxied `/sse` and `/mcp/message` flow.
 - Metrics history is stored locally at `${CCM_METRICS_HISTORY_FILE:-.vector-store/metrics-history.json}` and trimmed to `${CCM_METRICS_HISTORY_LIMIT:-20}` runs.
-- The metrics API also exposes `/api/metrics/history` for persisted runs and `/api/metrics/index-overview` for file and semantic AST coverage against the current watch root.
+- MCP usage telemetry is persisted at `${CCM_USAGE_METRICS_FILE:-/app/data/usage-metrics.json}` and only resets when the user triggers a manual reset in `/mcp-metrics.html` or calls `POST /api/metrics/usage/reset`.
+- The metrics API also exposes `/api/metrics/history` for persisted runs, `/api/metrics/index-overview` for file and semantic AST coverage, and `/api/metrics/usage` for persisted MCP transport utilization.
 
 ## Decision Log
 

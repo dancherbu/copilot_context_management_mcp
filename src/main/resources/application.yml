@@ -65,6 +65,7 @@ ccm:
   max-snippet-characters: 900
   metrics:
     history-file: ${CCM_METRICS_HISTORY_FILE:.vector-store/metrics-history.json}
+    usage-file: ${CCM_USAGE_METRICS_FILE:/app/data/usage-metrics.json}
     history-limit: ${CCM_METRICS_HISTORY_LIMIT:20}
     embedding-coverage-threshold-percent: ${CCM_EMBEDDING_COVERAGE_THRESHOLD_PERCENT:85.0}
     file-coverage-threshold-percent: ${CCM_FILE_COVERAGE_THRESHOLD_PERCENT:${CCM_EMBEDDING_COVERAGE_THRESHOLD_PERCENT:85.0}}

@@ -2,6 +2,7 @@ package dev.dancherbu.ccm.mcp;
 
 import dev.dancherbu.ccm.config.CcmProperties;
 import dev.dancherbu.ccm.model.IndexCoverageSnapshot;
+import dev.dancherbu.ccm.model.McpUsageSnapshot;
 import dev.dancherbu.ccm.model.MetricsBenchRequest;
 import dev.dancherbu.ccm.model.MetricsBenchResponse;
 import dev.dancherbu.ccm.model.MetricsBenchRun;
@@ -24,16 +25,19 @@ public class McpMetricsController {
     private final McpMetricsBenchmarkService benchmarkService;
     private final MetricsHistoryService metricsHistoryService;
     private final IndexInsightsService indexInsightsService;
+    private final McpUsageTelemetryService usageTelemetryService;
     private final CcmProperties properties;
 
     public McpMetricsController(
             McpMetricsBenchmarkService benchmarkService,
             MetricsHistoryService metricsHistoryService,
             IndexInsightsService indexInsightsService,
+            McpUsageTelemetryService usageTelemetryService,
             CcmProperties properties) {
         this.benchmarkService = benchmarkService;
         this.metricsHistoryService = metricsHistoryService;
         this.indexInsightsService = indexInsightsService;
+        this.usageTelemetryService = usageTelemetryService;
         this.properties = properties;
     }
 
@@ -60,6 +64,22 @@ public class McpMetricsController {
             @RequestHeader(value = "X-CCM-API-Key", required = false) String headerApiKey) {
         authorize(resolveApiKey(authorization, headerApiKey, null));
         return indexInsightsService.snapshot();
+    }
+
+    @GetMapping("/usage")
+    public McpUsageSnapshot usage(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestHeader(value = "X-CCM-API-Key", required = false) String headerApiKey) {
+        authorize(resolveApiKey(authorization, headerApiKey, null));
+        return usageTelemetryService.snapshot();
+    }
+
+    @PostMapping("/usage/reset")
+    public McpUsageSnapshot resetUsage(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestHeader(value = "X-CCM-API-Key", required = false) String headerApiKey) {
+        authorize(resolveApiKey(authorization, headerApiKey, null));
+        return usageTelemetryService.reset();
     }
 
     private void authorize(String apiKey) {

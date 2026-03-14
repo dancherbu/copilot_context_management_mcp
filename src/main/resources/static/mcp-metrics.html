@@ -79,11 +79,79 @@
             line-height: 1.6;
         }
 
+        details.fold {
+            overflow: hidden;
+        }
+
+        details.fold > summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 20px 24px;
+            border-bottom: 1px solid transparent;
+        }
+
+        details.fold > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.fold[open] > summary {
+            border-bottom-color: var(--line);
+        }
+
+        .fold-title {
+            display: grid;
+            gap: 4px;
+        }
+
+        .fold-title strong {
+            font-size: 22px;
+            letter-spacing: -0.02em;
+        }
+
+        .fold-title span {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .fold-chevron {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            display: grid;
+            place-items: center;
+            color: var(--accent);
+            font-size: 18px;
+            transition: transform 160ms ease;
+            flex: 0 0 auto;
+            background: rgba(255, 255, 255, 0.74);
+        }
+
+        details.fold[open] > summary .fold-chevron {
+            transform: rotate(90deg);
+        }
+
+        .fold-body {
+            padding: 24px;
+        }
+
         .grid {
             display: grid;
             grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
             gap: 24px;
             align-items: start;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
         }
 
         .panel {
@@ -268,7 +336,49 @@
             border-radius: 20px;
             border: 1px solid var(--line);
             background: rgba(255, 255, 255, 0.9);
-            padding: 18px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .project-card details {
+            padding: 0;
+        }
+
+        .project-card > details > summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 16px 18px;
+            border-bottom: 1px solid transparent;
+        }
+
+        .project-card > details > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .project-card > details[open] > summary {
+            border-bottom-color: var(--line);
+        }
+
+        .project-summary-title {
+            font-size: 32px;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            font-weight: 800;
+        }
+
+        .project-summary-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .project-details {
+            padding: 16px 18px 18px;
         }
 
         .chart-shell {
@@ -562,101 +672,156 @@
 </head>
 <body>
 <div class="shell">
-    <section class="hero">
-        <span class="eyebrow">CCM Local Metrics</span>
-        <h1>MCP Tool Bench</h1>
-        <p>Run real MCP calls against this server, measure end-to-end roundtrip time, and inspect the estimated payload tokens returned by each tool. The page uses a local benchmark API that opens a real MCP session against <code>/sse</code> and <code>/mcp/message</code> on your behalf.</p>
-    </section>
-
-    <div class="grid">
-        <section class="panel">
-            <h2>Bench Setup</h2>
-            <p class="lede">Use one query across selected tools. The page sends a benchmark request to the local server, which opens a fresh authenticated MCP session, initializes it, invokes each tool sequentially, and records the transport timings.</p>
-            <div class="stack">
-                <label>
-                    API Key
-                    <input id="apiKey" type="text" placeholder="Paste CCM_API_KEY">
-                </label>
-                <label>
-                    Query
-                    <textarea id="query">Add a deterministic MCP tool that prepares a coding handoff brief for GitHub Copilot</textarea>
-                </label>
-                <label>
-                    Project Name (optional readiness gate)
-                    <input id="projectName" type="text" placeholder="famamemomo">
-                </label>
-                <label>
-                    Preset Suite
-                    <select id="presetSelect"></select>
-                </label>
-                <div>
-                    <label style="margin-bottom: 10px;">Tools</label>
-                    <div class="tool-grid" id="toolGrid"></div>
-                </div>
-                <div class="actions">
-                    <button id="applyPreset" class="ghost" type="button">Apply Preset</button>
-                    <button id="runBench" class="primary">Run Selected Tools</button>
-                    <button id="loadHistory" class="ghost" type="button">Load History</button>
-                    <button id="refreshIndex" class="ghost" type="button">Refresh Embedding Coverage</button>
-                    <button id="resetBench" class="ghost" type="button">Reset Results</button>
-                </div>
-                <div id="status" class="status"></div>
-            </div>
-        </section>
-
-        <section class="panel">
-            <h2>Live Metrics</h2>
-            <p class="lede">Roundtrip is measured on the server from the tool-call POST to the matching SSE response event. Payload tokens come from each tool’s own deterministic estimate when available.</p>
-            <div class="summary-grid" id="summaryGrid">
-                <div class="summary-card"><span class="kicker">Tools Run</span><div class="value" id="summaryTools">0</div></div>
-                <div class="summary-card"><span class="kicker">Median RTT</span><div class="value" id="summaryMedian">0 ms</div></div>
-                <div class="summary-card"><span class="kicker">Total Payload Tokens</span><div class="value" id="summaryTokens">0</div></div>
-                <div class="summary-card"><span class="kicker">Errors</span><div class="value" id="summaryErrors">0</div></div>
-            </div>
-            <div id="latestPayload" class="payload-card">
-                <h3>Final Client Payload</h3>
-                <p class="empty-state">Run a benchmark to inspect the result that would be handed to the enterprise LLM or querying client.</p>
-            </div>
-            <div id="results" class="results"></div>
-        </section>
+    <div class="toolbar">
+        <button id="expandAllSections" class="ghost" type="button">Expand All Sections</button>
+        <button id="collapseAllSections" class="ghost" type="button">Collapse All Sections</button>
+        <button id="expandAllProjects" class="ghost" type="button">Expand All Projects</button>
+        <button id="collapseAllProjects" class="ghost" type="button">Collapse All Projects</button>
     </div>
 
-    <section class="panel wide-panel">
-        <div>
-            <h2>Trends & History</h2>
-            <p class="lede">Persisted benchmark runs stay local in the server’s metrics history file. Use them to compare median transport latency and payload size after tool or prompt changes.</p>
-        </div>
-        <div class="split-grid">
-            <div class="chart-card">
-                <h3>Median RTT Trend</h3>
-                <div id="chartLatency" class="chart-shell"></div>
+    <details id="overviewSection" class="hero fold">
+        <summary>
+            <div class="fold-title">
+                <span class="eyebrow">CCM Local Metrics</span>
+                <strong>MCP Tool Bench</strong>
+                <span>Overview and usage notes</span>
             </div>
-            <div class="chart-card">
-                <h3>Payload Token Trend</h3>
-                <div id="chartTokens" class="chart-shell"></div>
-            </div>
+            <span class="fold-chevron">▶</span>
+        </summary>
+        <div class="fold-body" style="padding-top: 12px;">
+            <p>Run real MCP calls against this server, measure end-to-end roundtrip time, and inspect the estimated payload tokens returned by each tool. The page uses a local benchmark API that opens a real MCP session against <code>/sse</code> and <code>/mcp/message</code> on your behalf.</p>
         </div>
-        <div id="historyGrid" class="history-grid"></div>
-    </section>
+    </details>
 
-    <section class="panel wide-panel">
-        <div>
-            <h2>Embedding Coverage</h2>
+    <div class="grid">
+        <details id="benchSetupSection" class="panel fold">
+            <summary>
+                <div class="fold-title">
+                    <strong>Bench Setup</strong>
+                    <span>Query, tool selection, and run controls</span>
+                </div>
+                <span class="fold-chevron">▶</span>
+            </summary>
+            <div class="fold-body">
+                <p class="lede">Use one query across selected tools. The page sends a benchmark request to the local server, which opens a fresh authenticated MCP session, initializes it, invokes each tool sequentially, and records the transport timings.</p>
+                <div class="stack">
+                    <label>
+                        API Key
+                        <input id="apiKey" type="text" placeholder="Paste CCM_API_KEY">
+                    </label>
+                    <label>
+                        Query
+                        <textarea id="query">Add a deterministic MCP tool that prepares a coding handoff brief for GitHub Copilot</textarea>
+                    </label>
+                    <label>
+                        Project Name (optional readiness gate)
+                        <input id="projectName" type="text" placeholder="famamemomo">
+                    </label>
+                    <label>
+                        Preset Suite
+                        <select id="presetSelect"></select>
+                    </label>
+                    <div>
+                        <label style="margin-bottom: 10px;">Tools</label>
+                        <div class="tool-grid" id="toolGrid"></div>
+                    </div>
+                    <div class="actions">
+                        <button id="applyPreset" class="ghost" type="button">Apply Preset</button>
+                        <button id="runBench" class="primary">Run Selected Tools</button>
+                        <button id="loadHistory" class="ghost" type="button">Load History</button>
+                        <button id="refreshIndex" class="ghost" type="button">Refresh Embedding Coverage</button>
+                        <button id="resetBench" class="ghost" type="button">Reset Results</button>
+                    </div>
+                    <div id="status" class="status"></div>
+                </div>
+            </div>
+        </details>
+
+        <details id="liveMetricsSection" class="panel fold" open>
+            <summary>
+                <div class="fold-title">
+                    <strong>Live Metrics</strong>
+                    <span>Runtime benchmark output and payload details</span>
+                </div>
+                <span class="fold-chevron">▶</span>
+            </summary>
+            <div class="fold-body">
+                <p class="lede">Roundtrip is measured on the server from the tool-call POST to the matching SSE response event. Payload tokens come from each tool’s own deterministic estimate when available.</p>
+                <p class="lede" id="usageLede">LLM MCP Utilization: real transport usage observed on /sse and /mcp/message.</p>
+                <div class="actions" style="margin-bottom: 14px;">
+                    <button id="resetUsageMetrics" class="ghost" type="button">Reset LLM MCP Utilization</button>
+                </div>
+                <div class="summary-grid" id="usageCard" style="margin-bottom: 18px;">
+                    <div class="summary-card"><span class="kicker">SSE Sessions</span><div class="value" id="usageSseSessions">0</div></div>
+                    <div class="summary-card"><span class="kicker">MCP Messages</span><div class="value" id="usageMcpMessages">0</div></div>
+                    <div class="summary-card"><span class="kicker">Unique Session IDs</span><div class="value" id="usageUniqueSessions">0</div></div>
+                    <div class="summary-card"><span class="kicker">Last Activity</span><div class="value" id="usageLastActivity" style="font-size: 16px; line-height: 1.2;">n/a</div></div>
+                </div>
+                <div class="summary-grid" id="summaryGrid">
+                    <div class="summary-card"><span class="kicker">Tools Run</span><div class="value" id="summaryTools">0</div></div>
+                    <div class="summary-card"><span class="kicker">Median RTT</span><div class="value" id="summaryMedian">0 ms</div></div>
+                    <div class="summary-card"><span class="kicker">Total Payload Tokens</span><div class="value" id="summaryTokens">0</div></div>
+                    <div class="summary-card"><span class="kicker">Errors</span><div class="value" id="summaryErrors">0</div></div>
+                </div>
+                <div id="latestPayload" class="payload-card">
+                    <h3>Final Client Payload</h3>
+                    <p class="empty-state">Run a benchmark to inspect the result that would be handed to the enterprise LLM or querying client.</p>
+                </div>
+                <div id="results" class="results"></div>
+            </div>
+        </details>
+    </div>
+
+    <details id="historySection" class="panel wide-panel fold">
+        <summary>
+            <div class="fold-title">
+                <strong>Trends & History</strong>
+                <span>Persisted local benchmark trends and recent runs</span>
+            </div>
+            <span class="fold-chevron">▶</span>
+        </summary>
+        <div class="fold-body">
+            <p class="lede">Persisted benchmark runs stay local in the server’s metrics history file. Use them to compare median transport latency and payload size after tool or prompt changes.</p>
+            <div class="split-grid">
+                <div class="chart-card">
+                    <h3>Median RTT Trend</h3>
+                    <div id="chartLatency" class="chart-shell"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Payload Token Trend</h3>
+                    <div id="chartTokens" class="chart-shell"></div>
+                </div>
+            </div>
+            <div id="historyGrid" class="history-grid"></div>
+        </div>
+    </details>
+
+    <details id="embeddingCoverageSection" class="panel wide-panel fold">
+        <summary>
+            <div class="fold-title">
+                <strong>Embedding Coverage</strong>
+                <span>Project coverage and symbol indexing details</span>
+            </div>
+            <span class="fold-chevron">▶</span>
+        </summary>
+        <div class="fold-body">
             <p class="lede">This view compares the current watched projects against the vector store. File coverage tells you which indexable files are embedded at all, while semantic coverage shows how many AST-derived Java chunks are actually present for classes, methods, constructors, and related symbols.</p>
+            <div class="summary-grid" id="indexSummaryGrid">
+                <div class="summary-card"><span class="kicker">Projects</span><div class="value" id="indexProjects">0</div></div>
+                <div class="summary-card"><span class="kicker">File Coverage</span><div class="value" id="indexFileCoverage">0%</div></div>
+                <div class="summary-card"><span class="kicker">Chunk Coverage</span><div class="value" id="indexChunkCoverage">0%</div></div>
+                <div class="summary-card"><span class="kicker">Semantic Coverage</span><div class="value" id="indexSemanticCoverage">0%</div></div>
+            </div>
+            <div id="indexMeta" class="muted"></div>
+            <div id="projectGrid" class="project-grid"></div>
         </div>
-        <div class="summary-grid" id="indexSummaryGrid">
-            <div class="summary-card"><span class="kicker">Projects</span><div class="value" id="indexProjects">0</div></div>
-            <div class="summary-card"><span class="kicker">File Coverage</span><div class="value" id="indexFileCoverage">0%</div></div>
-            <div class="summary-card"><span class="kicker">Chunk Coverage</span><div class="value" id="indexChunkCoverage">0%</div></div>
-            <div class="summary-card"><span class="kicker">Semantic Coverage</span><div class="value" id="indexSemanticCoverage">0%</div></div>
-        </div>
-        <div id="indexMeta" class="muted"></div>
-        <div id="projectGrid" class="project-grid"></div>
-    </section>
+    </details>
 </div>
 
 <script>
 const API_KEY_STORAGE_KEY = 'ccm.metrics.apiKey';
+const FOLD_STATE_STORAGE_KEY = 'ccm.metrics.foldState';
+const PROJECT_FOLD_STATE_STORAGE_KEY = 'ccm.metrics.projectFoldState';
 const DEFAULT_API_KEY = __DEFAULT_API_KEY__;
 const AUTH_REQUIRED = __AUTH_REQUIRED__;
 const toolConfigs = [
@@ -723,6 +888,7 @@ const runButton = document.getElementById('runBench');
 const resetButton = document.getElementById('resetBench');
 const loadHistoryButton = document.getElementById('loadHistory');
 const refreshIndexButton = document.getElementById('refreshIndex');
+const resetUsageMetricsButton = document.getElementById('resetUsageMetrics');
 const applyPresetButton = document.getElementById('applyPreset');
 const apiKeyInput = document.getElementById('apiKey');
 const queryInput = document.getElementById('query');
@@ -732,10 +898,15 @@ const historyGrid = document.getElementById('historyGrid');
 const projectGrid = document.getElementById('projectGrid');
 const indexMeta = document.getElementById('indexMeta');
 const latestPayloadEl = document.getElementById('latestPayload');
+const expandAllSectionsButton = document.getElementById('expandAllSections');
+const collapseAllSectionsButton = document.getElementById('collapseAllSections');
+const expandAllProjectsButton = document.getElementById('expandAllProjects');
+const collapseAllProjectsButton = document.getElementById('collapseAllProjects');
 let hydrationInFlight = false;
 let hydratedApiKey = '';
 let panelsHydrated = false;
 let indexRetryHandle = null;
+let usageRetryHandle = null;
 
 for (const tool of toolConfigs) {
     const wrapper = document.createElement('label');
@@ -793,6 +964,62 @@ refreshIndexButton.addEventListener('click', async () => {
         return;
     }
     await loadIndexOverview(apiKey);
+});
+
+resetUsageMetricsButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to reset usage telemetry.', true);
+        return;
+    }
+    if (!window.confirm('Reset LLM MCP utilization counters? This action clears persisted usage telemetry.')) {
+        return;
+    }
+    try {
+        setStatus('Resetting MCP usage telemetry...');
+        const response = await authorizedFetch('/api/metrics/usage/reset', apiKey, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`Usage reset failed with HTTP ${response.status}`);
+        }
+        const usage = await response.json();
+        renderUsageOverview(usage);
+        if (usageRetryHandle) {
+            clearTimeout(usageRetryHandle);
+            usageRetryHandle = null;
+        }
+        scheduleUsageRetry(apiKey);
+        setStatus('MCP usage telemetry reset.');
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
+});
+
+expandAllSectionsButton.addEventListener('click', () => {
+    for (const section of document.querySelectorAll('details.fold')) {
+        section.open = true;
+    }
+    setStatus('Expanded all sections.');
+});
+
+collapseAllSectionsButton.addEventListener('click', () => {
+    for (const section of document.querySelectorAll('details.fold')) {
+        section.open = false;
+    }
+    setStatus('Collapsed all sections.');
+});
+
+expandAllProjectsButton.addEventListener('click', () => {
+    for (const projectDetails of projectGrid.querySelectorAll(':scope > .project-card > details')) {
+        projectDetails.open = true;
+    }
+    setStatus('Expanded all project cards.');
+});
+
+collapseAllProjectsButton.addEventListener('click', () => {
+    for (const projectDetails of projectGrid.querySelectorAll(':scope > .project-card > details')) {
+        projectDetails.open = false;
+    }
+    setStatus('Collapsed all project cards.');
 });
 
 apiKeyInput.addEventListener('input', () => {
@@ -872,6 +1099,7 @@ runButton.addEventListener('click', async () => {
         renderHistory(benchmark.recentRuns || []);
         renderCharts(benchmark.recentRuns || []);
         await loadIndexOverview(apiKey, false);
+        await loadUsageOverview(apiKey, false);
         setStatus('Bench complete.');
     } catch (error) {
         setStatus(error instanceof Error ? error.message : String(error), true);
@@ -907,9 +1135,10 @@ async function hydrateSecuredPanels(apiKey) {
     hydrationInFlight = true;
     try {
         setStatus('Loading secured metrics and embedding coverage...');
-        const [historyResult, indexResult] = await Promise.allSettled([
+        const [historyResult, indexResult, usageResult] = await Promise.allSettled([
             authorizedFetch('/api/metrics/history', apiKey),
-            authorizedFetch('/api/metrics/index-overview', apiKey)
+            authorizedFetch('/api/metrics/index-overview', apiKey),
+            authorizedFetch('/api/metrics/usage', apiKey)
         ]);
 
         const messages = [];
@@ -937,6 +1166,18 @@ async function hydrateSecuredPanels(apiKey) {
             }
         } else {
             messages.push(indexResult.reason instanceof Error ? indexResult.reason.message : String(indexResult.reason));
+        }
+
+        if (usageResult.status === 'fulfilled') {
+            if (!usageResult.value.ok) {
+                messages.push(`Usage metrics failed with HTTP ${usageResult.value.status}`);
+            } else {
+                const usage = await usageResult.value.json();
+                renderUsageOverview(usage);
+                scheduleUsageRetry(apiKey);
+            }
+        } else {
+            messages.push(usageResult.reason instanceof Error ? usageResult.reason.message : String(usageResult.reason));
         }
 
         hydratedApiKey = apiKey;
@@ -1000,6 +1241,26 @@ async function loadIndexOverview(apiKey, updateStatus = true) {
         scheduleIndexRetryIfNeeded(apiKey, snapshot);
         if (updateStatus) {
             setStatus('Embedding coverage refreshed.');
+        }
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
+}
+
+async function loadUsageOverview(apiKey, updateStatus = true) {
+    try {
+        if (updateStatus) {
+            setStatus('Refreshing MCP usage telemetry...');
+        }
+        const response = await authorizedFetch('/api/metrics/usage', apiKey);
+        if (!response.ok) {
+            throw new Error(`Usage metrics failed with HTTP ${response.status}`);
+        }
+        const usage = await response.json();
+        renderUsageOverview(usage);
+        scheduleUsageRetry(apiKey);
+        if (updateStatus) {
+            setStatus('MCP usage telemetry refreshed.');
         }
     } catch (error) {
         setStatus(error instanceof Error ? error.message : String(error), true);
@@ -1246,26 +1507,94 @@ function renderIndexOverview(snapshot) {
     }
 
     for (const project of snapshot.projects) {
+        const overallCoverage = averageCoverage(project);
+        const targetState = project.embeddingCoverageThresholdMet
+            ? 'target met'
+            : `${formatPercent(project.embeddingCoverageShortfallPercent || 0)}% short`;
         const article = document.createElement('article');
         article.className = 'project-card';
+        const projectKey = project.projectPath || project.projectName;
+        const projectOpen = readProjectFoldState()[projectKey] === true;
         article.innerHTML = `
-            <h3>${escapeHtml(project.projectName)}</h3>
-            <div class="project-meta">
-                <span class="mini-pill">${project.indexableFiles} files</span>
-                <span class="mini-pill">${formatPercent(project.fileCoveragePercent)}% file coverage</span>
-                <span class="mini-pill">${project.embeddingCoverageThresholdMet ? 'target met' : `${formatPercent(project.embeddingCoverageShortfallPercent || 0)}% short of target`}</span>
-                <span class="mini-pill">${formatPercent(project.chunkCoveragePercent)}% chunk coverage</span>
-                <span class="mini-pill">${formatPercent(project.semanticCoveragePercent)}% semantic coverage</span>
-                <span class="mini-pill">${project.embeddedSemanticNodes}/${project.totalSemanticNodes} semantic nodes</span>
-            </div>
-            ${(project.warnings || []).length ? `<div class="empty-state" style="margin-top: 12px;">${project.warnings.map(warning => escapeHtml(warning)).join('<br>')}</div>` : ''}
-            <div class="pill-row" style="margin-top: 12px;">${(project.nodeTypeCoverage || []).map(item => `<span class="pill">${escapeHtml(item.nodeType)} ${item.embedded}/${item.total}</span>`).join('')}</div>
-            <details ${projectGrid.children.length === 0 ? 'open' : ''}>
-                <summary>Project files and symbol samples</summary>
-                ${renderFileTable(project.files || [])}
+            <details ${projectOpen ? 'open' : ''} data-project-key="${escapeHtml(projectKey)}">
+                <summary>
+                    <div class="project-summary-title">${escapeHtml(project.projectName)}</div>
+                    <div class="project-summary-meta">
+                        <span class="mini-pill">overall ${formatPercent(overallCoverage)}%</span>
+                        <span class="mini-pill">${targetState}</span>
+                    </div>
+                </summary>
+                <div class="project-details">
+                    <div class="project-meta">
+                        <span class="mini-pill">${project.indexableFiles} files</span>
+                        <span class="mini-pill">${formatPercent(project.fileCoveragePercent)}% file coverage</span>
+                        <span class="mini-pill">${formatPercent(project.chunkCoveragePercent)}% chunk coverage</span>
+                        <span class="mini-pill">${formatPercent(project.semanticCoveragePercent)}% semantic coverage</span>
+                        <span class="mini-pill">${project.embeddedSemanticNodes}/${project.totalSemanticNodes} semantic nodes</span>
+                    </div>
+                    ${(project.warnings || []).length ? `<div class="empty-state" style="margin-top: 12px;">${project.warnings.map(warning => escapeHtml(warning)).join('<br>')}</div>` : ''}
+                    <div class="pill-row" style="margin-top: 12px;">${(project.nodeTypeCoverage || []).map(item => `<span class="pill">${escapeHtml(item.nodeType)} ${item.embedded}/${item.total}</span>`).join('')}</div>
+                    <details style="margin-top: 14px;">
+                        <summary>Project files and symbol samples</summary>
+                        ${renderFileTable(project.files || [])}
+                    </details>
+                </div>
             </details>`;
+        const details = article.querySelector(':scope > details');
+        if (details) {
+            details.addEventListener('toggle', () => {
+                const state = readProjectFoldState();
+                state[projectKey] = details.open;
+                writeProjectFoldState(state);
+            });
+        }
         projectGrid.appendChild(article);
     }
+}
+
+function renderUsageOverview(usage) {
+    const sseEl = document.getElementById('usageSseSessions');
+    const msgEl = document.getElementById('usageMcpMessages');
+    const uniqEl = document.getElementById('usageUniqueSessions');
+    const lastEl = document.getElementById('usageLastActivity');
+    if (!sseEl || !msgEl || !uniqEl || !lastEl) {
+        return;
+    }
+    sseEl.textContent = String(usage.sseSessionsOpened || 0);
+    msgEl.textContent = String(usage.mcpMessagesReceived || 0);
+    uniqEl.textContent = String(usage.uniqueSessionIds || 0);
+    lastEl.textContent = formatUsageTime(usage.lastMcpMessageAt || usage.lastSseOpenedAt);
+}
+
+function formatUsageTime(value) {
+    if (!value) {
+        return 'n/a';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return 'n/a';
+    }
+    return parsed.toLocaleString();
+}
+
+function scheduleUsageRetry(apiKey) {
+    if (usageRetryHandle) {
+        clearTimeout(usageRetryHandle);
+    }
+    usageRetryHandle = setTimeout(() => {
+        usageRetryHandle = null;
+        void loadUsageOverview(apiKey, false);
+    }, 8000);
+}
+
+function averageCoverage(project) {
+    const values = [
+        Number(project.fileCoveragePercent) || 0,
+        Number(project.chunkCoveragePercent) || 0,
+        Number(project.semanticCoveragePercent) || 0
+    ];
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return total / values.length;
 }
 
 function renderFileTable(files) {
@@ -1317,6 +1646,55 @@ function authorizedFetch(url, apiKey, options = {}) {
     return fetch(url, { ...options, headers });
 }
 
+function readFoldState() {
+    try {
+        const raw = localStorage.getItem(FOLD_STATE_STORAGE_KEY);
+        if (!raw) {
+            return {};
+        }
+        return JSON.parse(raw);
+    } catch (_error) {
+        return {};
+    }
+}
+
+function writeFoldState(state) {
+    localStorage.setItem(FOLD_STATE_STORAGE_KEY, JSON.stringify(state));
+}
+
+function readProjectFoldState() {
+    try {
+        const raw = localStorage.getItem(PROJECT_FOLD_STATE_STORAGE_KEY);
+        if (!raw) {
+            return {};
+        }
+        return JSON.parse(raw);
+    } catch (_error) {
+        return {};
+    }
+}
+
+function writeProjectFoldState(state) {
+    localStorage.setItem(PROJECT_FOLD_STATE_STORAGE_KEY, JSON.stringify(state));
+}
+
+function initializeFoldState() {
+    const saved = readFoldState();
+    for (const fold of document.querySelectorAll('details.fold')) {
+        const id = fold.id;
+        if (id && Object.prototype.hasOwnProperty.call(saved, id)) {
+            fold.open = saved[id] === true;
+        }
+        fold.addEventListener('toggle', () => {
+            const state = readFoldState();
+            if (id) {
+                state[id] = fold.open;
+                writeFoldState(state);
+            }
+        });
+    }
+}
+
 function scheduleIndexRetryIfNeeded(apiKey, snapshot) {
     if (indexRetryHandle) {
         clearTimeout(indexRetryHandle);
@@ -1345,6 +1723,7 @@ setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, 
 renderLatestPayload(null);
 renderHistory([]);
 renderCharts([]);
+initializeFoldState();
 renderIndexOverview({
     reindexRunId: '',
     reindexProjectName: '',

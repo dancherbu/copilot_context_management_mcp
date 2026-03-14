@@ -118,6 +118,7 @@ public class CcmProperties {
 
     public static class Metrics {
         private String historyFile;
+        private String usageFile;
         private int historyLimit = 20;
         private double embeddingCoverageThresholdPercent = 85.0;
         private double fileCoverageThresholdPercent = 85.0;
@@ -130,6 +131,14 @@ public class CcmProperties {
 
         public void setHistoryFile(String historyFile) {
             this.historyFile = historyFile;
+        }
+
+        public String getUsageFile() {
+            return usageFile;
+        }
+
+        public void setUsageFile(String usageFile) {
+            this.usageFile = usageFile;
         }
 
         public int getHistoryLimit() {

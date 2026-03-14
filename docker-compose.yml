@@ -16,6 +16,7 @@ services:
       WORKSPACE_WATCH_ROOT: ${WORKSPACE_WATCH_ROOT:-/workspace/projects}
       LOG_FILE_PATH: ${LOG_FILE_PATH:-/app/logs/application.log}
       VECTOR_STORE_FILE: ${VECTOR_STORE_FILE:-/app/data/vector-store.json}
+      CCM_USAGE_METRICS_FILE: ${CCM_USAGE_METRICS_FILE:-/app/data/usage-metrics.json}
     ports:
       - "${APP_PORT:-18080}:8080"
     volumes:
