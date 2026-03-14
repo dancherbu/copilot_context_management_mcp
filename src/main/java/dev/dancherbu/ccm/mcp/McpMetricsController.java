@@ -58,6 +58,14 @@ public class McpMetricsController {
         return metricsHistoryService.getRecentRuns();
     }
 
+    @PostMapping("/history/reset")
+    public List<MetricsBenchRun> resetHistory(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestHeader(value = "X-CCM-API-Key", required = false) String headerApiKey) {
+        authorize(resolveApiKey(authorization, headerApiKey, null));
+        return metricsHistoryService.resetRuns();
+    }
+
     @GetMapping("/index-overview")
     public IndexCoverageSnapshot indexOverview(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,

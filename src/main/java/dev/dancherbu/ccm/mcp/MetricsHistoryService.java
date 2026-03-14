@@ -68,6 +68,16 @@ public class MetricsHistoryService {
         }
     }
 
+    public List<MetricsBenchRun> resetRuns() {
+        lock.lock();
+        try {
+            persist(List.of());
+            return List.of();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private List<MetricsBenchRun> loadRuns() {
         if (!Files.exists(historyFile)) {
             return List.of();

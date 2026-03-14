@@ -751,6 +751,7 @@
                 <div class="actions" style="margin-bottom: 14px;">
                     <button id="exportUsageMetrics" class="ghost" type="button">Export LLM MCP Utilization JSON</button>
                     <button id="resetUsageMetrics" class="ghost" type="button">Reset LLM MCP Utilization</button>
+                    <button id="resetAllMetrics" class="ghost" type="button">Reset All Metrics</button>
                 </div>
                 <div class="summary-grid" id="usageCard" style="margin-bottom: 18px;">
                     <div class="summary-card"><span class="kicker">SSE Sessions</span><div class="value" id="usageSseSessions">0</div></div>
@@ -891,6 +892,7 @@ const loadHistoryButton = document.getElementById('loadHistory');
 const refreshIndexButton = document.getElementById('refreshIndex');
 const exportUsageMetricsButton = document.getElementById('exportUsageMetrics');
 const resetUsageMetricsButton = document.getElementById('resetUsageMetrics');
+const resetAllMetricsButton = document.getElementById('resetAllMetrics');
 const applyPresetButton = document.getElementById('applyPreset');
 const apiKeyInput = document.getElementById('apiKey');
 const queryInput = document.getElementById('query');
@@ -937,12 +939,31 @@ for (const preset of presets) {
 
 applyPreset(presets[0].name);
 
-resetButton.addEventListener('click', () => {
-    resultsEl.innerHTML = '';
-    setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, errorCount: 0, sessionInitMs: 0 });
-    renderLatestPayload(null);
-    panelsHydrated = false;
-    setStatus('Results cleared.');
+resetButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to reset persisted benchmark history.', true);
+        return;
+    }
+    if (!window.confirm('Reset benchmark results? This clears persisted history and summary cards.')) {
+        return;
+    }
+    try {
+        setStatus('Resetting persisted benchmark history...');
+        const response = await authorizedFetch('/api/metrics/history/reset', apiKey, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`History reset failed with HTTP ${response.status}`);
+        }
+        resultsEl.innerHTML = '';
+        setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, errorCount: 0, sessionInitMs: 0 });
+        renderLatestPayload(null);
+        renderHistory([]);
+        renderCharts([]);
+        panelsHydrated = false;
+        setStatus('Benchmark results reset.');
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
 });
 
 applyPresetButton.addEventListener('click', () => {
@@ -991,6 +1012,49 @@ resetUsageMetricsButton.addEventListener('click', async () => {
         }
         scheduleUsageRetry(apiKey);
         setStatus('MCP usage telemetry reset.');
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
+});
+
+resetAllMetricsButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to reset all metrics.', true);
+        return;
+    }
+    if (!window.confirm('Reset all metrics? This clears persisted benchmark history and LLM MCP utilization counters.')) {
+        return;
+    }
+    try {
+        setStatus('Resetting all metrics...');
+        const [historyResponse, usageResponse] = await Promise.all([
+            authorizedFetch('/api/metrics/history/reset', apiKey, { method: 'POST' }),
+            authorizedFetch('/api/metrics/usage/reset', apiKey, { method: 'POST' })
+        ]);
+
+        if (!historyResponse.ok) {
+            throw new Error(`History reset failed with HTTP ${historyResponse.status}`);
+        }
+        if (!usageResponse.ok) {
+            throw new Error(`Usage reset failed with HTTP ${usageResponse.status}`);
+        }
+
+        const usage = await usageResponse.json();
+        renderUsageOverview(usage);
+        if (usageRetryHandle) {
+            clearTimeout(usageRetryHandle);
+            usageRetryHandle = null;
+        }
+        scheduleUsageRetry(apiKey);
+
+        resultsEl.innerHTML = '';
+        setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, errorCount: 0, sessionInitMs: 0 });
+        renderLatestPayload(null);
+        renderHistory([]);
+        renderCharts([]);
+        panelsHydrated = false;
+        setStatus('All metrics reset.');
     } catch (error) {
         setStatus(error instanceof Error ? error.message : String(error), true);
     }
@@ -1139,6 +1203,7 @@ async function loadHistory(apiKey) {
             throw new Error(`History request failed with HTTP ${response.status}`);
         }
         const runs = await response.json();
+        setSummaryFromLatestRun(runs);
         renderLatestPayload(runs[0] || null);
         renderHistory(runs);
         renderCharts(runs);
@@ -1171,6 +1236,7 @@ async function hydrateSecuredPanels(apiKey) {
                 messages.push(`History request failed with HTTP ${historyResult.value.status}`);
             } else {
                 const runs = await historyResult.value.json();
+                setSummaryFromLatestRun(runs);
                 renderLatestPayload(runs[0] || null);
                 renderHistory(runs);
                 renderCharts(runs);
@@ -1321,6 +1387,21 @@ function setSummary(summary) {
     if ((summary.sessionInitMs || 0) > 0) {
         document.getElementById('summaryMedian').textContent += ` + ${summary.sessionInitMs} ms init`;
     }
+}
+
+function setSummaryFromLatestRun(runs) {
+    const latest = Array.isArray(runs) && runs.length ? runs[0] : null;
+    if (!latest) {
+        setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, errorCount: 0, sessionInitMs: 0 });
+        return;
+    }
+    setSummary({
+        toolsRun: latest.toolsRun || 0,
+        medianRoundtripMs: latest.medianRoundtripMs || 0,
+        totalEstimatedPayloadTokens: latest.totalEstimatedPayloadTokens || 0,
+        errorCount: latest.errorCount || 0,
+        sessionInitMs: latest.sessionInitMs || 0
+    });
 }
 
 function renderMetric(metric) {
