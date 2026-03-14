@@ -1,0 +1,106 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+spring:
+  application:
+    name: copilot-context-management-mcp
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:replace-me}
+      timeout: 2s
+  ai:
+    model:
+      chat: ollama
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
+      init:
+        pull-model-strategy: never
+      chat:
+        options:
+          model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder:7b}
+          temperature: 0.1
+          num-ctx: 4096
+      embedding:
+        options:
+          model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    mcp:
+      server:
+        name: copilot-context-management-mcp
+        version: 0.0.1
+        type: SYNC
+        protocol: SSE
+        keep-alive-interval: 30s
+        sse-message-endpoint: /mcp/message
+        tool-change-notification: true
+        resource-change-notification: true
+        prompt-change-notification: true
+        annotation-scanner:
+          enabled: true
+
+logging:
+  file:
+    name: ${LOG_FILE_PATH:logs/application.log}
+  level:
+    root: INFO
+    dev.dancherbu.ccm: INFO
+
+ccm:
+  watch-root: ${WORKSPACE_WATCH_ROOT:/workspace/projects}
+  vector-store-file: ${VECTOR_STORE_FILE:.vector-store/vector-store.json}
+  semantic-cache-prefix: ccm:mcp:semantic
+  analysis-token-limit: 1500
+  max-snippet-characters: 900
+  metrics:
+    history-file: ${CCM_METRICS_HISTORY_FILE:.vector-store/metrics-history.json}
+    history-limit: ${CCM_METRICS_HISTORY_LIMIT:20}
+    embedding-coverage-threshold-percent: ${CCM_EMBEDDING_COVERAGE_THRESHOLD_PERCENT:85.0}
+    file-coverage-threshold-percent: ${CCM_FILE_COVERAGE_THRESHOLD_PERCENT:${CCM_EMBEDDING_COVERAGE_THRESHOLD_PERCENT:85.0}}
+    chunk-coverage-threshold-percent: ${CCM_CHUNK_COVERAGE_THRESHOLD_PERCENT:${CCM_EMBEDDING_COVERAGE_THRESHOLD_PERCENT:85.0}}
+    semantic-coverage-threshold-percent: ${CCM_SEMANTIC_COVERAGE_THRESHOLD_PERCENT:${CCM_EMBEDDING_COVERAGE_THRESHOLD_PERCENT:85.0}}
+  security:
+    api-key: ${CCM_API_KEY:}
+  ollama:
+    chat-model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder:7b}
+    embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+  ignore:
+    builtins:
+      - .git
+      - node_modules
+      - target
+      - dist
+      - build
+      - coverage
+      - .idea
+      - .vscode
+      - .gradle
+      - .mvn
+      - logs
+    patterns:
+      - '.env'
+      - '.env.*'
+      - '.npmrc'
+      - '.pypirc'
+      - 'copilot-secrets.md'
+      - 'id_rsa'
+      - 'id_rsa.*'
+      - 'id_ed25519'
+      - 'id_ed25519.*'
+      - '*.pem'
+      - '*.key'
+      - '*.p12'
+      - '*.pfx'
+      - '*.jks'
+      - '*.keystore'

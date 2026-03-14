@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCM MCP Metrics Bench</title>
+    <style>
+        :root {
+            --bg: #f4efe6;
+            --panel: rgba(255, 251, 244, 0.9);
+            --ink: #1f2228;
+            --muted: #6b685f;
+            --accent: #0d6b62;
+            --accent-soft: #d8efe8;
+            --line: rgba(31, 34, 40, 0.12);
+            --warn: #ac5b2d;
+            --shadow: 0 20px 50px rgba(34, 31, 28, 0.10);
+            --radius: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Aptos", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(13, 107, 98, 0.18), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(172, 91, 45, 0.16), transparent 26%),
+                linear-gradient(160deg, #f8f4ec 0%, #ece2d4 100%);
+            padding: 32px;
+        }
+
+        .shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            gap: 24px;
+        }
+
+        .hero,
+        .panel {
+            background: var(--panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            padding: 28px 32px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(32px, 4vw, 54px);
+            line-height: 0.96;
+            letter-spacing: -0.04em;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 920px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .panel {
+            padding: 24px;
+        }
+
+        .panel h2 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        .panel .lede {
+            margin: 0 0 18px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .stack {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            display: grid;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.88);
+            color: var(--ink);
+            padding: 14px 16px;
+            font: inherit;
+            transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: rgba(13, 107, 98, 0.55);
+            box-shadow: 0 0 0 4px rgba(13, 107, 98, 0.12);
+            transform: translateY(-1px);
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .tool-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .tool-option {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 12px;
+            align-items: start;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.62);
+        }
+
+        .tool-option strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .tool-option span {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            appearance: none;
+            border: none;
+            border-radius: 999px;
+            padding: 14px 18px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: progress;
+            transform: none;
+        }
+
+        .primary {
+            color: white;
+            background: linear-gradient(135deg, #0d6b62, #195448);
+            box-shadow: 0 12px 24px rgba(13, 107, 98, 0.22);
+        }
+
+        .ghost {
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--line);
+        }
+
+        .status {
+            min-height: 24px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .status.warn {
+            color: var(--warn);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .summary-card {
+            padding: 18px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(236, 242, 240, 0.84));
+            border: 1px solid var(--line);
+        }
+
+        .summary-card .kicker {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 30px;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            font-weight: 800;
+        }
+
+        .results {
+            display: grid;
+            gap: 16px;
+        }
+
+        .wide-panel {
+            display: grid;
+            gap: 18px;
+        }
+
+        .split-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .chart-card,
+        .history-card,
+        .project-card {
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 18px;
+        }
+
+        .chart-shell {
+            display: grid;
+            gap: 12px;
+        }
+
+        .chart-bars {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(22px, 1fr);
+            align-items: end;
+            gap: 10px;
+            min-height: 180px;
+            padding-top: 12px;
+        }
+
+        .chart-bar-wrap {
+            display: grid;
+            gap: 8px;
+            align-items: end;
+            justify-items: center;
+        }
+
+        .chart-bar {
+            width: 100%;
+            min-height: 8px;
+            border-radius: 14px 14px 6px 6px;
+            background: linear-gradient(180deg, #0d6b62, #79b7a8);
+            box-shadow: inset 0 -10px 18px rgba(255, 255, 255, 0.18);
+        }
+
+        .chart-bar.tokens {
+            background: linear-gradient(180deg, #ac5b2d, #d7a17e);
+        }
+
+        .chart-label,
+        .chart-value {
+            font-size: 11px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .history-grid,
+        .project-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .payload-card {
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .payload-card h3,
+        .payload-card h4 {
+            margin: 0;
+        }
+
+        .payload-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .payload-stack {
+            display: grid;
+            gap: 14px;
+        }
+
+        .payload-tool {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.72);
+            display: grid;
+            gap: 10px;
+        }
+
+        .payload-tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-card h3,
+        .project-card h3,
+        .chart-card h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+        }
+
+        .history-meta,
+        .project-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .mini-pill {
+            border-radius: 999px;
+            padding: 7px 10px;
+            background: rgba(31, 34, 40, 0.06);
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .project-card details {
+            margin-top: 14px;
+        }
+
+        .project-card summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            font-size: 13px;
+        }
+
+        .file-table th,
+        .file-table td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        .file-table th {
+            color: var(--muted);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .empty-state {
+            color: var(--muted);
+            padding: 12px 0;
+        }
+
+        .result-card {
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.9);
+            overflow: hidden;
+        }
+
+        .result-head {
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(180deg, rgba(216, 239, 232, 0.9), rgba(255, 255, 255, 0.4));
+        }
+
+        .result-head h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .badge {
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .badge.ok {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .badge.error {
+            background: rgba(172, 91, 45, 0.12);
+            color: var(--warn);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1px;
+            background: var(--line);
+        }
+
+        .metric {
+            background: rgba(255, 255, 255, 0.88);
+            padding: 14px 16px;
+        }
+
+        .metric label {
+            gap: 4px;
+            margin: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+        }
+
+        .metric strong {
+            font-size: 21px;
+            letter-spacing: -0.03em;
+        }
+
+        .result-body {
+            padding: 18px 20px 22px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .json-preview {
+            margin: 0;
+            padding: 16px;
+            border-radius: 18px;
+            background: #1d2327;
+            color: #f3ede5;
+            font-family: "Iosevka Term", "JetBrains Mono", monospace;
+            font-size: 12px;
+            line-height: 1.55;
+            overflow-x: auto;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pill {
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: rgba(13, 107, 98, 0.08);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1080px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .split-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid,
+            .metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 16px;
+            }
+
+            .hero,
+            .panel {
+                padding: 20px;
+            }
+
+            .summary-grid,
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .result-head {
+                align-items: start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <section class="hero">
+        <span class="eyebrow">CCM Local Metrics</span>
+        <h1>MCP Tool Bench</h1>
+        <p>Run real MCP calls against this server, measure end-to-end roundtrip time, and inspect the estimated payload tokens returned by each tool. The page uses a local benchmark API that opens a real MCP session against <code>/sse</code> and <code>/mcp/message</code> on your behalf.</p>
+    </section>
+
+    <div class="grid">
+        <section class="panel">
+            <h2>Bench Setup</h2>
+            <p class="lede">Use one query across selected tools. The page sends a benchmark request to the local server, which opens a fresh authenticated MCP session, initializes it, invokes each tool sequentially, and records the transport timings.</p>
+            <div class="stack">
+                <label>
+                    API Key
+                    <input id="apiKey" type="text" placeholder="Paste CCM_API_KEY">
+                </label>
+                <label>
+                    Query
+                    <textarea id="query">Add a deterministic MCP tool that prepares a coding handoff brief for GitHub Copilot</textarea>
+                </label>
+                <label>
+                    Project Name (optional readiness gate)
+                    <input id="projectName" type="text" placeholder="famamemomo">
+                </label>
+                <label>
+                    Preset Suite
+                    <select id="presetSelect"></select>
+                </label>
+                <div>
+                    <label style="margin-bottom: 10px;">Tools</label>
+                    <div class="tool-grid" id="toolGrid"></div>
+                </div>
+                <div class="actions">
+                    <button id="applyPreset" class="ghost" type="button">Apply Preset</button>
+                    <button id="runBench" class="primary">Run Selected Tools</button>
+                    <button id="loadHistory" class="ghost" type="button">Load History</button>
+                    <button id="refreshIndex" class="ghost" type="button">Refresh Embedding Coverage</button>
+                    <button id="resetBench" class="ghost" type="button">Reset Results</button>
+                </div>
+                <div id="status" class="status"></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Live Metrics</h2>
+            <p class="lede">Roundtrip is measured on the server from the tool-call POST to the matching SSE response event. Payload tokens come from each tool’s own deterministic estimate when available.</p>
+            <div class="summary-grid" id="summaryGrid">
+                <div class="summary-card"><span class="kicker">Tools Run</span><div class="value" id="summaryTools">0</div></div>
+                <div class="summary-card"><span class="kicker">Median RTT</span><div class="value" id="summaryMedian">0 ms</div></div>
+                <div class="summary-card"><span class="kicker">Total Payload Tokens</span><div class="value" id="summaryTokens">0</div></div>
+                <div class="summary-card"><span class="kicker">Errors</span><div class="value" id="summaryErrors">0</div></div>
+            </div>
+            <div id="latestPayload" class="payload-card">
+                <h3>Final Client Payload</h3>
+                <p class="empty-state">Run a benchmark to inspect the result that would be handed to the enterprise LLM or querying client.</p>
+            </div>
+            <div id="results" class="results"></div>
+        </section>
+    </div>
+
+    <section class="panel wide-panel">
+        <div>
+            <h2>Trends & History</h2>
+            <p class="lede">Persisted benchmark runs stay local in the server’s metrics history file. Use them to compare median transport latency and payload size after tool or prompt changes.</p>
+        </div>
+        <div class="split-grid">
+            <div class="chart-card">
+                <h3>Median RTT Trend</h3>
+                <div id="chartLatency" class="chart-shell"></div>
+            </div>
+            <div class="chart-card">
+                <h3>Payload Token Trend</h3>
+                <div id="chartTokens" class="chart-shell"></div>
+            </div>
+        </div>
+        <div id="historyGrid" class="history-grid"></div>
+    </section>
+
+    <section class="panel wide-panel">
+        <div>
+            <h2>Embedding Coverage</h2>
+            <p class="lede">This view compares the current watched projects against the vector store. File coverage tells you which indexable files are embedded at all, while semantic coverage shows how many AST-derived Java chunks are actually present for classes, methods, constructors, and related symbols.</p>
+        </div>
+        <div class="summary-grid" id="indexSummaryGrid">
+            <div class="summary-card"><span class="kicker">Projects</span><div class="value" id="indexProjects">0</div></div>
+            <div class="summary-card"><span class="kicker">File Coverage</span><div class="value" id="indexFileCoverage">0%</div></div>
+            <div class="summary-card"><span class="kicker">Chunk Coverage</span><div class="value" id="indexChunkCoverage">0%</div></div>
+            <div class="summary-card"><span class="kicker">Semantic Coverage</span><div class="value" id="indexSemanticCoverage">0%</div></div>
+        </div>
+        <div id="indexMeta" class="muted"></div>
+        <div id="projectGrid" class="project-grid"></div>
+    </section>
+</div>
+
+<script>
+const API_KEY_STORAGE_KEY = 'ccm.metrics.apiKey';
+const DEFAULT_API_KEY = __DEFAULT_API_KEY__;
+const AUTH_REQUIRED = __AUTH_REQUIRED__;
+const toolConfigs = [
+    {
+        name: 'get_project_readiness',
+        label: 'Get Project Readiness',
+        description: 'Preflight readiness report so clients can pick projects eligible for analysis tools.',
+        buildArgs: (_query, projectName) => ({ projectName: projectName || '' })
+    },
+    {
+        name: 'trace_change_impact',
+        label: 'Trace Change Impact',
+        description: 'Blast radius across configs, tests, dependency edges, and operational touchpoints.',
+        buildArgs: (query, projectName) => ({ query, topK: 6, maxFiles: 4, projectName })
+    },
+    {
+        name: 'find_test_obligations',
+        label: 'Find Test Obligations',
+        description: 'Existing tests, missing pairings, suggested scenarios, and verification commands.',
+        buildArgs: (query, projectName) => ({ query, topK: 6, maxFiles: 4, projectName })
+    },
+    {
+        name: 'assemble_execution_brief',
+        label: 'Assemble Execution Brief',
+        description: 'Files to inspect, edit plan, tests, constraints, and handoff prompt.',
+        buildArgs: (query, projectName) => ({ query, topK: 6, maxFiles: 4, projectName })
+    },
+    {
+        name: 'find_similar_implementations',
+        label: 'Find Similar Implementations',
+        description: 'Nearby indexed code patterns that should be copied rather than reinvented.',
+        buildArgs: (query, projectName) => ({ query, topK: 6, maxExamples: 4, projectName })
+    }
+];
+
+const presets = [
+    {
+        name: 'planning',
+        label: 'Planning Suite',
+        description: 'Impact, tests, and execution brief for pre-implementation scoping.',
+        tools: ['trace_change_impact', 'find_test_obligations', 'assemble_execution_brief'],
+        query: 'Plan a safe implementation change and identify the files, tests, and constraints that matter most'
+    },
+    {
+        name: 'implementation-handoff',
+        label: 'Implementation Handoff',
+        description: 'Context bundle, similar code, and execution brief for coding-model handoff.',
+        tools: ['build_context_bundle', 'find_similar_implementations', 'assemble_execution_brief'],
+        query: 'Prepare a concise coding handoff with nearby local patterns and concrete edit targets'
+    },
+    {
+        name: 'debugging',
+        label: 'Debugging Suite',
+        description: 'Impact analysis plus similar implementations to isolate regressions quickly.',
+        tools: ['analyze_impacted_files', 'trace_change_impact', 'find_similar_implementations'],
+        query: 'Trace a regression through the indexed codebase and show the most relevant local implementations'
+    }
+];
+
+const toolGrid = document.getElementById('toolGrid');
+const resultsEl = document.getElementById('results');
+const statusEl = document.getElementById('status');
+const runButton = document.getElementById('runBench');
+const resetButton = document.getElementById('resetBench');
+const loadHistoryButton = document.getElementById('loadHistory');
+const refreshIndexButton = document.getElementById('refreshIndex');
+const applyPresetButton = document.getElementById('applyPreset');
+const apiKeyInput = document.getElementById('apiKey');
+const queryInput = document.getElementById('query');
+const projectNameInput = document.getElementById('projectName');
+const presetSelect = document.getElementById('presetSelect');
+const historyGrid = document.getElementById('historyGrid');
+const projectGrid = document.getElementById('projectGrid');
+const indexMeta = document.getElementById('indexMeta');
+const latestPayloadEl = document.getElementById('latestPayload');
+let hydrationInFlight = false;
+let hydratedApiKey = '';
+let panelsHydrated = false;
+let indexRetryHandle = null;
+
+for (const tool of toolConfigs) {
+    const wrapper = document.createElement('label');
+    wrapper.className = 'tool-option';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = tool.name;
+    checkbox.checked = true;
+    checkbox.dataset.toolName = tool.name;
+
+    const text = document.createElement('div');
+    text.innerHTML = `<strong>${tool.label}</strong><span>${tool.description}</span>`;
+
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(text);
+    toolGrid.appendChild(wrapper);
+}
+
+for (const preset of presets) {
+    const option = document.createElement('option');
+    option.value = preset.name;
+    option.textContent = `${preset.label} · ${preset.description}`;
+    presetSelect.appendChild(option);
+}
+
+applyPreset(presets[0].name);
+
+resetButton.addEventListener('click', () => {
+    resultsEl.innerHTML = '';
+    setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, errorCount: 0, sessionInitMs: 0 });
+    renderLatestPayload(null);
+    panelsHydrated = false;
+    setStatus('Results cleared.');
+});
+
+applyPresetButton.addEventListener('click', () => {
+    applyPreset(presetSelect.value);
+    setStatus('Preset applied.');
+});
+
+loadHistoryButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to load persisted history.', true);
+        return;
+    }
+    await loadHistory(apiKey);
+});
+
+refreshIndexButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to inspect embedding coverage.', true);
+        return;
+    }
+    await loadIndexOverview(apiKey);
+});
+
+apiKeyInput.addEventListener('input', () => {
+    persistApiKey();
+    queueHydration();
+});
+
+apiKeyInput.addEventListener('change', () => {
+    persistApiKey();
+    queueHydration();
+});
+
+apiKeyInput.addEventListener('blur', () => {
+    persistApiKey();
+    queueHydration();
+});
+
+runButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    const query = queryInput.value.trim();
+    const projectName = projectNameInput.value.trim();
+    const selectedTools = toolConfigs.filter(tool => {
+        const checkbox = toolGrid.querySelector(`input[data-tool-name="${tool.name}"]`);
+        return checkbox && checkbox.checked;
+    });
+
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to call the protected MCP transport.', true);
+        return;
+    }
+    if (!query) {
+        setStatus('A query is required.', true);
+        return;
+    }
+    const hasGatedTool = selectedTools.some(tool => tool.name !== 'get_project_readiness');
+    if (hasGatedTool && !projectName) {
+        setStatus('Project Name is required because analysis tools are readiness-gated by project.', true);
+        return;
+    }
+    if (selectedTools.length === 0) {
+        setStatus('Select at least one tool.', true);
+        return;
+    }
+
+    runButton.disabled = true;
+    resultsEl.innerHTML = '';
+    setStatus('Opening MCP session and running selected tools...');
+
+    try {
+        const response = await authorizedFetch('/api/metrics/bench', apiKey, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                apiKey,
+                query,
+                tools: selectedTools.map(tool => tool.name),
+                projectName
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Metrics bench failed with HTTP ${response.status}`);
+        }
+
+        const benchmark = await response.json();
+        for (const metric of benchmark.results) {
+            const config = toolConfigs.find(tool => tool.name === metric.toolName);
+            resultsEl.appendChild(renderMetric({
+                ...metric,
+                label: config ? config.label : metric.toolName,
+                keys: metric.topLevelKeys,
+                preview: metric.preview
+            }));
+        }
+        setSummary(benchmark);
+        renderLatestPayload({ query, projectName, tools: selectedTools.map(tool => tool.name), results: benchmark.results || [] });
+        renderHistory(benchmark.recentRuns || []);
+        renderCharts(benchmark.recentRuns || []);
+        await loadIndexOverview(apiKey, false);
+        setStatus('Bench complete.');
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    } finally {
+        runButton.disabled = false;
+    }
+});
+
+async function loadHistory(apiKey) {
+    try {
+        setStatus('Loading persisted benchmark history...');
+        const response = await authorizedFetch('/api/metrics/history', apiKey);
+        if (!response.ok) {
+            throw new Error(`History request failed with HTTP ${response.status}`);
+        }
+        const runs = await response.json();
+        renderLatestPayload(runs[0] || null);
+        renderHistory(runs);
+        renderCharts(runs);
+        setStatus('History loaded.');
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
+}
+
+async function hydrateSecuredPanels(apiKey) {
+    if ((AUTH_REQUIRED && !apiKey) || hydrationInFlight) {
+        return;
+    }
+    if (panelsHydrated && apiKey === hydratedApiKey) {
+        return;
+    }
+    hydrationInFlight = true;
+    try {
+        setStatus('Loading secured metrics and embedding coverage...');
+        const [historyResult, indexResult] = await Promise.allSettled([
+            authorizedFetch('/api/metrics/history', apiKey),
+            authorizedFetch('/api/metrics/index-overview', apiKey)
+        ]);
+
+        const messages = [];
+
+        if (historyResult.status === 'fulfilled') {
+            if (!historyResult.value.ok) {
+                messages.push(`History request failed with HTTP ${historyResult.value.status}`);
+            } else {
+                const runs = await historyResult.value.json();
+                renderLatestPayload(runs[0] || null);
+                renderHistory(runs);
+                renderCharts(runs);
+            }
+        } else {
+            messages.push(historyResult.reason instanceof Error ? historyResult.reason.message : String(historyResult.reason));
+        }
+
+        if (indexResult.status === 'fulfilled') {
+            if (!indexResult.value.ok) {
+                messages.push(`Index overview failed with HTTP ${indexResult.value.status}`);
+            } else {
+                const snapshot = await indexResult.value.json();
+                renderIndexOverview(snapshot);
+                scheduleIndexRetryIfNeeded(apiKey, snapshot);
+            }
+        } else {
+            messages.push(indexResult.reason instanceof Error ? indexResult.reason.message : String(indexResult.reason));
+        }
+
+        hydratedApiKey = apiKey;
+        panelsHydrated = true;
+        setStatus(messages.length === 0 ? 'Metrics loaded.' : `Partial metrics load: ${messages.join(' | ')}`, messages.length > 0);
+    } catch (error) {
+        hydratedApiKey = '';
+        panelsHydrated = false;
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    } finally {
+        hydrationInFlight = false;
+    }
+}
+
+function queueHydration() {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        return;
+    }
+    void hydrateSecuredPanels(apiKey);
+}
+
+function persistApiKey() {
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey) {
+        sessionStorage.removeItem(API_KEY_STORAGE_KEY);
+        return;
+    }
+    sessionStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+}
+
+function restoreApiKey() {
+    if (!AUTH_REQUIRED) {
+        sessionStorage.removeItem(API_KEY_STORAGE_KEY);
+        apiKeyInput.value = '';
+        apiKeyInput.placeholder = 'No API key required in local mode';
+        return;
+    }
+    const storedApiKey = sessionStorage.getItem(API_KEY_STORAGE_KEY);
+    if (storedApiKey && !apiKeyInput.value.trim()) {
+        apiKeyInput.value = storedApiKey;
+        return;
+    }
+    if (DEFAULT_API_KEY && !apiKeyInput.value.trim()) {
+        apiKeyInput.value = DEFAULT_API_KEY;
+        persistApiKey();
+    }
+}
+
+async function loadIndexOverview(apiKey, updateStatus = true) {
+    try {
+        if (updateStatus) {
+            setStatus('Refreshing embedding coverage snapshot...');
+        }
+        const response = await authorizedFetch('/api/metrics/index-overview', apiKey);
+        if (!response.ok) {
+            throw new Error(`Index overview failed with HTTP ${response.status}`);
+        }
+        const snapshot = await response.json();
+        renderIndexOverview(snapshot);
+        scheduleIndexRetryIfNeeded(apiKey, snapshot);
+        if (updateStatus) {
+            setStatus('Embedding coverage refreshed.');
+        }
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
+}
+
+function applyPreset(presetName) {
+    const preset = presets.find(candidate => candidate.name === presetName);
+    if (!preset) {
+        return;
+    }
+    for (const tool of toolConfigs) {
+        const checkbox = toolGrid.querySelector(`input[data-tool-name="${tool.name}"]`);
+        if (checkbox) {
+            checkbox.checked = preset.tools.includes(tool.name);
+        }
+    }
+    queryInput.value = preset.query;
+}
+
+function setStatus(message, isWarn = false) {
+    statusEl.textContent = message;
+    statusEl.className = isWarn ? 'status warn' : 'status';
+}
+
+function setSummary(summary) {
+    document.getElementById('summaryTools').textContent = String(summary.toolsRun || 0);
+    document.getElementById('summaryTokens').textContent = String(summary.totalEstimatedPayloadTokens || 0);
+    document.getElementById('summaryErrors').textContent = String(summary.errorCount || 0);
+    if (!summary.toolsRun) {
+        document.getElementById('summaryMedian').textContent = '0 ms';
+        return;
+    }
+    document.getElementById('summaryMedian').textContent = `${summary.medianRoundtripMs || 0} ms`;
+    if ((summary.sessionInitMs || 0) > 0) {
+        document.getElementById('summaryMedian').textContent += ` + ${summary.sessionInitMs} ms init`;
+    }
+}
+
+function renderMetric(metric) {
+    const article = document.createElement('article');
+    article.className = 'result-card';
+
+    const pillRow = metric.keys.length
+        ? `<div class="pill-row">${metric.keys.map(key => `<span class="pill">${escapeHtml(key)}</span>`).join('')}</div>`
+        : '';
+
+    article.innerHTML = `
+        <div class="result-head">
+            <div>
+                <h3>${escapeHtml(metric.label)}</h3>
+            </div>
+            <span class="badge ${metric.status === 'ok' ? 'ok' : 'error'}">${metric.status}</span>
+        </div>
+        <div class="metrics">
+            <div class="metric"><label>Roundtrip<strong>${metric.roundtripMs} ms</strong></label></div>
+            <div class="metric"><label>Payload Tokens<strong>${metric.estimatedPayloadTokens}</strong></label></div>
+            <div class="metric"><label>Response Bytes<strong>${metric.responseBytes}</strong></label></div>
+            <div class="metric"><label>Top-Level Keys<strong>${metric.keys.length}</strong></label></div>
+        </div>
+        <div class="result-body">
+            ${pillRow}
+            <pre class="json-preview">${escapeHtml(metric.preview)}</pre>
+        </div>`;
+
+    return article;
+}
+
+
+function renderHistory(runs) {
+    historyGrid.innerHTML = '';
+    if (!runs.length) {
+        historyGrid.innerHTML = '<div class="empty-state">No persisted runs yet. Run a suite or load history.</div>';
+        return;
+    }
+    for (const run of runs) {
+        const payload = deriveClientPayload(run);
+        const article = document.createElement('article');
+        article.className = 'history-card';
+        article.innerHTML = `
+            <h3>${escapeHtml(run.query)}</h3>
+            <div class="history-meta">
+                <span class="mini-pill">${run.medianRoundtripMs} ms median</span>
+                <span class="mini-pill">${run.totalEstimatedPayloadTokens} tokens</span>
+                <span class="mini-pill">${run.toolsRun} tools</span>
+                <span class="mini-pill">${new Date(run.recordedAt).toLocaleString()}</span>
+            </div>
+            <div class="pill-row" style="margin-top: 12px;">${run.tools.map(tool => `<span class="pill">${escapeHtml(labelForTool(tool))}</span>`).join('')}</div>
+            <details style="margin-top: 14px;" ${historyGrid.children.length === 0 ? 'open' : ''}>
+                <summary>Final result sent to client</summary>
+                ${renderPayloadMarkup(payload, true)}
+            </details>`;
+        historyGrid.appendChild(article);
+    }
+}
+
+function renderLatestPayload(run) {
+    if (!run) {
+        latestPayloadEl.innerHTML = `
+            <h3>Final Client Payload</h3>
+            <p class="empty-state">Run a benchmark to inspect the result that would be handed to the enterprise LLM or querying client.</p>`;
+        return;
+    }
+    const payload = deriveClientPayload(run);
+    latestPayloadEl.innerHTML = `
+        <h3>Final Client Payload</h3>
+        <div class="payload-meta">
+            <span class="mini-pill">${escapeHtml(payload.primaryToolLabel)}</span>
+            <span class="mini-pill">${payload.okResults.length} result blocks</span>
+            <span class="mini-pill">${escapeHtml(run.query || '')}</span>
+        </div>
+        ${renderPayloadMarkup(payload, false)}`;
+}
+
+function deriveClientPayload(run) {
+    const allResults = Array.isArray(run?.results) ? run.results : [];
+    const okResults = allResults.filter(result => result.status === 'ok');
+    const orderedResults = okResults.length ? okResults : allResults;
+    const primary = orderedResults.length ? orderedResults[orderedResults.length - 1] : null;
+    const combinedPreview = orderedResults.length
+        ? orderedResults.map(result => `### ${labelForTool(result.toolName)}\n${result.preview || ''}`).join('\n\n')
+        : 'No tool result was recorded for this run.';
+    return {
+        okResults: orderedResults,
+        primaryToolLabel: primary ? labelForTool(primary.toolName) : 'No result',
+        primaryPreview: primary ? (primary.preview || '') : 'No tool result was recorded for this run.',
+        combinedPreview,
+        query: run?.query || ''
+    };
+}
+
+function renderPayloadMarkup(payload, collapsed) {
+    const toolCards = payload.okResults.length
+        ? payload.okResults.map(result => `
+            <article class="payload-tool">
+                <div class="payload-tool-header">
+                    <h4>${escapeHtml(labelForTool(result.toolName))}</h4>
+                    <span class="mini-pill">${result.estimatedPayloadTokens} tokens</span>
+                </div>
+                <pre class="json-preview">${escapeHtml(result.preview || '')}</pre>
+            </article>`).join('')
+        : `<p class="empty-state">${escapeHtml(payload.primaryPreview)}</p>`;
+
+    if (collapsed) {
+        return `
+            <div class="payload-stack" style="margin-top: 12px;">
+                <div>
+                    <div class="muted">Primary result</div>
+                    <pre class="json-preview">${escapeHtml(payload.primaryPreview)}</pre>
+                </div>
+                <details>
+                    <summary>Show full combined payload</summary>
+                    <pre class="json-preview" style="margin-top: 12px;">${escapeHtml(payload.combinedPreview)}</pre>
+                    <div class="payload-stack" style="margin-top: 12px;">${toolCards}</div>
+                </details>
+            </div>`;
+    }
+
+    return `
+        <div class="payload-stack">
+            <div>
+                <div class="muted">Primary result</div>
+                <pre class="json-preview">${escapeHtml(payload.primaryPreview)}</pre>
+            </div>
+            <details open>
+                <summary>Combined result payload</summary>
+                <pre class="json-preview" style="margin-top: 12px;">${escapeHtml(payload.combinedPreview)}</pre>
+            </details>
+            <details>
+                <summary>Per-tool result blocks</summary>
+                <div class="payload-stack" style="margin-top: 12px;">${toolCards}</div>
+            </details>
+        </div>`;
+}
+
+function renderCharts(runs) {
+    renderBarChart(
+        document.getElementById('chartLatency'),
+        runs,
+        run => run.medianRoundtripMs,
+        value => `${value} ms`,
+        'latency'
+    );
+    renderBarChart(
+        document.getElementById('chartTokens'),
+        runs,
+        run => run.totalEstimatedPayloadTokens,
+        value => `${value}`,
+        'tokens'
+    );
+}
+
+function renderBarChart(container, runs, selector, formatter, variant) {
+    container.innerHTML = '';
+    if (!runs.length) {
+        container.innerHTML = '<div class="empty-state">History is empty.</div>';
+        return;
+    }
+    const trimmed = runs.slice(0, 10).reverse();
+    const values = trimmed.map(selector);
+    const max = Math.max(...values, 1);
+    const shell = document.createElement('div');
+    shell.className = 'chart-bars';
+    trimmed.forEach((run, index) => {
+        const value = selector(run);
+        const wrap = document.createElement('div');
+        wrap.className = 'chart-bar-wrap';
+        wrap.innerHTML = `
+            <div class="chart-value">${escapeHtml(formatter(value))}</div>
+            <div class="chart-bar ${variant === 'tokens' ? 'tokens' : ''}" style="height: ${Math.max(8, Math.round((value / max) * 132))}px"></div>
+            <div class="chart-label">#${trimmed.length - index}</div>`;
+        shell.appendChild(wrap);
+    });
+    container.appendChild(shell);
+}
+
+function renderIndexOverview(snapshot) {
+    document.getElementById('indexProjects').textContent = String(snapshot.totalProjects || 0);
+    document.getElementById('indexFileCoverage').textContent = `${formatPercent(snapshot.fileCoveragePercent)}%`;
+    document.getElementById('indexChunkCoverage').textContent = `${formatPercent(snapshot.chunkCoveragePercent)}%`;
+    document.getElementById('indexSemanticCoverage').textContent = `${formatPercent(snapshot.semanticCoveragePercent)}%`;
+    const thresholdLabel = `${formatPercent(snapshot.embeddingCoverageThresholdPercent || 0)}%`;
+    const thresholdState = snapshot.embeddingCoverageThresholdMet
+        ? `target met (${thresholdLabel})`
+        : `target gap ${formatPercent(snapshot.embeddingCoverageShortfallPercent || 0)}% to ${thresholdLabel}`;
+    const dimensionState = `File ${formatPercent(snapshot.fileCoverageThresholdPercent || 0)}%: ${snapshot.fileCoverageThresholdMet ? 'met' : `${formatPercent(snapshot.fileCoverageThresholdShortfallPercent || 0)}% short`} · Chunk ${formatPercent(snapshot.chunkCoverageThresholdPercent || 0)}%: ${snapshot.chunkCoverageThresholdMet ? 'met' : `${formatPercent(snapshot.chunkCoverageThresholdShortfallPercent || 0)}% short`} · Semantic ${formatPercent(snapshot.semanticCoverageThresholdPercent || 0)}%: ${snapshot.semanticCoverageThresholdMet ? 'met' : `${formatPercent(snapshot.semanticCoverageThresholdShortfallPercent || 0)}% short`}`;
+    const reindexState = snapshot.reindexInProgress
+        ? `Reindex running · indexed ${snapshot.reindexIndexedFiles || 0} files · failed ${snapshot.reindexFailedFiles || 0} files`
+        : `Reindex idle · indexed ${snapshot.reindexIndexedFiles || 0} files · failed ${snapshot.reindexFailedFiles || 0} files`;
+    const queueState = snapshot.reindexQueueTotal > 0
+        ? `queue ${snapshot.reindexQueuePosition || 0}/${snapshot.reindexQueueTotal}`
+        : 'queue n/a';
+    const reindexRun = snapshot.reindexRunId
+        ? `run ${snapshot.reindexRunId.slice(0, 8)}${snapshot.reindexProjectName ? ` (${snapshot.reindexProjectName})` : ''}`
+        : 'run n/a';
+    indexMeta.textContent = snapshot.watchRoot
+        ? `Watch root: ${snapshot.watchRoot} · Embedding model: ${snapshot.embeddingModel || 'n/a'} · Indexed documents: ${snapshot.indexedDocuments} · ${reindexState} · ${queueState} · ${reindexRun} · Coverage threshold: ${thresholdState} · ${dimensionState} · Generated: ${new Date(snapshot.generatedAt).toLocaleString()}`
+        : 'No watch root available.';
+
+    projectGrid.innerHTML = '';
+    if (!snapshot.projects || !snapshot.projects.length) {
+        projectGrid.innerHTML = '<div class="empty-state">No indexable projects were found under the current watch root.</div>';
+        return;
+    }
+
+    for (const project of snapshot.projects) {
+        const article = document.createElement('article');
+        article.className = 'project-card';
+        article.innerHTML = `
+            <h3>${escapeHtml(project.projectName)}</h3>
+            <div class="project-meta">
+                <span class="mini-pill">${project.indexableFiles} files</span>
+                <span class="mini-pill">${formatPercent(project.fileCoveragePercent)}% file coverage</span>
+                <span class="mini-pill">${project.embeddingCoverageThresholdMet ? 'target met' : `${formatPercent(project.embeddingCoverageShortfallPercent || 0)}% short of target`}</span>
+                <span class="mini-pill">${formatPercent(project.chunkCoveragePercent)}% chunk coverage</span>
+                <span class="mini-pill">${formatPercent(project.semanticCoveragePercent)}% semantic coverage</span>
+                <span class="mini-pill">${project.embeddedSemanticNodes}/${project.totalSemanticNodes} semantic nodes</span>
+            </div>
+            ${(project.warnings || []).length ? `<div class="empty-state" style="margin-top: 12px;">${project.warnings.map(warning => escapeHtml(warning)).join('<br>')}</div>` : ''}
+            <div class="pill-row" style="margin-top: 12px;">${(project.nodeTypeCoverage || []).map(item => `<span class="pill">${escapeHtml(item.nodeType)} ${item.embedded}/${item.total}</span>`).join('')}</div>
+            <details ${projectGrid.children.length === 0 ? 'open' : ''}>
+                <summary>Project files and symbol samples</summary>
+                ${renderFileTable(project.files || [])}
+            </details>`;
+        projectGrid.appendChild(article);
+    }
+}
+
+function renderFileTable(files) {
+    if (!files.length) {
+        return '<div class="empty-state">No indexed files in this project.</div>';
+    }
+    const rows = files.map(file => `
+        <tr>
+            <td>${escapeHtml(file.relativePath)}</td>
+            <td>${escapeHtml(file.language)}</td>
+            <td>${file.indexed ? 'Yes' : 'No'}</td>
+            <td>${file.embeddedChunks}/${file.totalChunks} (${formatPercent(file.chunkCoveragePercent)}%)</td>
+            <td>${file.embeddedSemanticNodes}/${file.totalSemanticNodes} (${formatPercent(file.semanticCoveragePercent)}%)</td>
+            <td>${escapeHtml(file.embeddedSymbols.join(', ') || 'n/a')}</td>
+            <td>${escapeHtml(file.missingSymbols.join(', ') || 'n/a')}</td>
+        </tr>`).join('');
+    return `
+        <table class="file-table">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Language</th>
+                    <th>Indexed</th>
+                    <th>Chunks</th>
+                    <th>Semantic</th>
+                    <th>Embedded Symbols</th>
+                    <th>Missing Symbols</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+}
+
+function labelForTool(toolName) {
+    const tool = toolConfigs.find(candidate => candidate.name === toolName);
+    return tool ? tool.label : toolName;
+}
+
+function formatPercent(value) {
+    const numeric = Number.isFinite(value) ? value : 0;
+    return numeric.toFixed(2).replace(/\.00$/, '');
+}
+
+function authorizedFetch(url, apiKey, options = {}) {
+    const headers = new Headers(options.headers || {});
+    if (apiKey) {
+        headers.set('X-CCM-API-Key', apiKey);
+    }
+    return fetch(url, { ...options, headers });
+}
+
+function scheduleIndexRetryIfNeeded(apiKey, snapshot) {
+    if (indexRetryHandle) {
+        clearTimeout(indexRetryHandle);
+        indexRetryHandle = null;
+    }
+    if (!snapshot || !snapshot.watchRoot) {
+        return;
+    }
+    if (!snapshot.reindexInProgress && ((snapshot.indexedDocuments || 0) > 0 || (snapshot.totalProjects || 0) > 0)) {
+        return;
+    }
+    indexRetryHandle = setTimeout(() => {
+        indexRetryHandle = null;
+        void loadIndexOverview(apiKey, false);
+    }, 4000);
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
+setSummary({ toolsRun: 0, medianRoundtripMs: 0, totalEstimatedPayloadTokens: 0, errorCount: 0, sessionInitMs: 0 });
+renderLatestPayload(null);
+renderHistory([]);
+renderCharts([]);
+renderIndexOverview({
+    reindexRunId: '',
+    reindexProjectName: '',
+    reindexQueuePosition: 0,
+    reindexQueueTotal: 0,
+    reindexInProgress: false,
+    reindexIndexedFiles: 0,
+    reindexFailedFiles: 0,
+    reindexStartedAt: '',
+    reindexUpdatedAt: '',
+    reindexLastIndexedPath: '',
+    reindexLastErrorPath: '',
+    embeddingCoverageThresholdPercent: 85,
+    embeddingCoverageThresholdMet: false,
+    embeddingCoverageShortfallPercent: 85,
+    fileCoverageThresholdPercent: 85,
+    fileCoverageThresholdMet: false,
+    fileCoverageThresholdShortfallPercent: 85,
+    chunkCoverageThresholdPercent: 85,
+    chunkCoverageThresholdMet: false,
+    chunkCoverageThresholdShortfallPercent: 85,
+    semanticCoverageThresholdPercent: 85,
+    semanticCoverageThresholdMet: false,
+    semanticCoverageThresholdShortfallPercent: 85,
+    warnings: [],
+    totalProjects: 0,
+    fileCoveragePercent: 0,
+    chunkCoveragePercent: 0,
+    semanticCoveragePercent: 0,
+    watchRoot: '',
+    embeddingModel: '',
+    indexedDocuments: 0,
+    generatedAt: new Date().toISOString(),
+    projects: []
+});
+
+restoreApiKey();
+setTimeout(queueHydration, 150);
+setTimeout(queueHydration, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+target/
+.mvn/
+.idea/
+.vscode/
+.gradle/
+logs/
+*.log
+*.tmp
+*.temp
+*.swp
+.env
+.env.*
+!.env.example
+copilot-secrets.md
+node_modules/
+.vector-store/
+.cache/
