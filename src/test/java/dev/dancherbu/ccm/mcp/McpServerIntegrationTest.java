@@ -157,6 +157,7 @@ class McpServerIntegrationTest {
         assertThat(toolsJson).contains("assemble_execution_brief");
         assertThat(toolsJson).contains("find_similar_implementations");
         assertThat(toolsJson).contains("get_project_readiness");
+        assertThat(toolsJson).contains("get_project_guidance");
         assertThat(toolsJson).contains("get_orchestration_plan");
         assertThat(toolsJson).contains("get_orchestration_bootstrap");
 
@@ -167,6 +168,15 @@ class McpServerIntegrationTest {
         assertThat(readinessResult.path("result").path("isError").asBoolean(false)).isFalse();
         assertThat(readinessResult.path("result").path("content").get(0).path("text").asText())
                 .contains("projects");
+
+        post(client, endpointEvent.data(), """
+                {"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"get_project_guidance","arguments":{}}}
+                """);
+        JsonNode guidanceResult = objectMapper.readTree(readEvent(reader).data());
+        assertThat(guidanceResult.path("result").path("isError").asBoolean(false)).isFalse();
+        assertThat(guidanceResult.path("result").path("content").get(0).path("text").asText())
+                .contains("guidanceHash")
+                .contains("includeSecrets");
 
         post(client, endpointEvent.data(), """
                 {"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"get_orchestration_bootstrap","arguments":{"query":"map the MCP server structure"}}}

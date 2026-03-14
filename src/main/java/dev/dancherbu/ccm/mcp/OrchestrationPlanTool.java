@@ -84,6 +84,13 @@ public class OrchestrationPlanTool {
         readinessArgs.put("projectName", hasReadyProject ? effectiveProject : "");
         templates.put("get_project_readiness", readinessArgs);
 
+        templates.put("get_project_guidance", mapOf(
+                "projectName", effectiveProject,
+                "responseMode", responseMode,
+                "tokenBudget", tokenBudget,
+                "ifNoneMatchGuidanceHash", "<prior-guidance-hash-optional>",
+                "includeSecrets", true));
+
         templates.put("analyze_impacted_files", mapOf(
                 "query", "<your-change-request>",
                 "topK", topK,

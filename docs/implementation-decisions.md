@@ -19,6 +19,7 @@ This document records the implementation plan and the design decisions made whil
 13. Add a single-call orchestration plan tool that returns argument templates for core MCP tools.
 14. Add a super-call bootstrap tool that returns readiness, orchestration templates, and an initial context bundle.
 15. Add server-managed orchestration sessions and compact unchanged response mode for bootstrap.
+16. Add a project-guidance discovery tool for local instructions, standards, deployment steps, and secret locations.
 
 ### Token Efficiency Roadmap Status
 
@@ -131,6 +132,12 @@ This document records the implementation plan and the design decisions made whil
 - Decision: extend `get_orchestration_bootstrap` with optional `orchestrationSessionId` and `returnPayloadOnUnchanged`, plus server-side session state for remembered defaults and context hashes.
 - Reason: clients should avoid resending per-call orchestration state and should be able to request minimal responses on unchanged context loops.
 - Outcome: bootstrap responses now return `orchestrationSessionId` and `sessionState`; session state is persisted in Redis with TTL, and unchanged bundle payloads can be omitted deterministically when requested.
+
+### 20. Add local project-guidance discovery for Copilot workflow context
+
+- Decision: add `get_project_guidance` to extract project purpose, best practices, coding standards, deployment guidance, and secret locations from local instruction files.
+- Reason: local Copilot workflows already rely on instruction and secrets files directly; surfacing this context via MCP reduces repeated manual context transfer and supports project-specific conventions.
+- Outcome: MCP now exposes deterministic guidance discovery with `guidanceHash` and unchanged short-circuit behavior, plus orchestration templates for direct use in planning loops.
 
 ### 8. Degrade `analyze_impacted_files` gracefully when the local chat model fails
 

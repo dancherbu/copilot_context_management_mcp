@@ -749,6 +749,7 @@
                 <p class="lede">Roundtrip is measured on the server from the tool-call POST to the matching SSE response event. Payload tokens come from each tool’s own deterministic estimate when available.</p>
                 <p class="lede" id="usageLede">LLM MCP Utilization: real transport usage observed on /sse and /mcp/message.</p>
                 <div class="actions" style="margin-bottom: 14px;">
+                    <button id="exportUsageMetrics" class="ghost" type="button">Export LLM MCP Utilization JSON</button>
                     <button id="resetUsageMetrics" class="ghost" type="button">Reset LLM MCP Utilization</button>
                 </div>
                 <div class="summary-grid" id="usageCard" style="margin-bottom: 18px;">
@@ -888,6 +889,7 @@ const runButton = document.getElementById('runBench');
 const resetButton = document.getElementById('resetBench');
 const loadHistoryButton = document.getElementById('loadHistory');
 const refreshIndexButton = document.getElementById('refreshIndex');
+const exportUsageMetricsButton = document.getElementById('exportUsageMetrics');
 const resetUsageMetricsButton = document.getElementById('resetUsageMetrics');
 const applyPresetButton = document.getElementById('applyPreset');
 const apiKeyInput = document.getElementById('apiKey');
@@ -989,6 +991,27 @@ resetUsageMetricsButton.addEventListener('click', async () => {
         }
         scheduleUsageRetry(apiKey);
         setStatus('MCP usage telemetry reset.');
+    } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+    }
+});
+
+exportUsageMetricsButton.addEventListener('click', async () => {
+    const apiKey = apiKeyInput.value.trim();
+    if (AUTH_REQUIRED && !apiKey) {
+        setStatus('API key is required to export usage telemetry.', true);
+        return;
+    }
+    try {
+        setStatus('Exporting MCP usage telemetry...');
+        const response = await authorizedFetch('/api/metrics/usage', apiKey);
+        if (!response.ok) {
+            throw new Error(`Usage export failed with HTTP ${response.status}`);
+        }
+        const usage = await response.json();
+        const filename = buildUsageExportFilename(usage.generatedAt);
+        downloadJsonFile(filename, usage);
+        setStatus(`Usage telemetry exported as ${filename}.`);
     } catch (error) {
         setStatus(error instanceof Error ? error.message : String(error), true);
     }
@@ -1644,6 +1667,25 @@ function authorizedFetch(url, apiKey, options = {}) {
         headers.set('X-CCM-API-Key', apiKey);
     }
     return fetch(url, { ...options, headers });
+}
+
+function buildUsageExportFilename(generatedAt) {
+    const timestamp = generatedAt
+        ? String(generatedAt).replaceAll(':', '-').replaceAll('.', '-').replaceAll('T', '_').replaceAll('Z', '')
+        : new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-').replaceAll('T', '_').replaceAll('Z', '');
+    return `ccm-usage-metrics-${timestamp}.json`;
+}
+
+function downloadJsonFile(filename, payload) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
 }
 
 function readFoldState() {
