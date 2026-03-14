@@ -7,22 +7,24 @@ Use these settings on GitHub for the main branch.
 1. Require a pull request before merging
 2. Require approvals: 1 or 2
 3. Dismiss stale pull request approvals when new commits are pushed
-4. Require status checks to pass before merging
-5. Require branches to be up to date before merging
-6. Require conversation resolution before merging
-7. Restrict who can push to matching branches
-8. Do not allow force pushes
-9. Do not allow deletions
+4. Require conversation resolution before merging
+5. Restrict who can push to matching branches
+6. Do not allow force pushes
+7. Do not allow deletions
 
-## Suggested Required Checks
+## Status Checks Policy
 
-Add your CI workflow check names here once configured.
+- This repository intentionally avoids GitHub Actions to prevent CI billing surprises.
+- Leave required status checks unset by default.
+- Require contributors to run local validation before opening a PR.
 
-Example placeholders:
+Required local validation commands:
 
-- build
-- test
-- integration
+```bash
+docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 mvn -q test -DskipITs
+docker compose up --build -d
+curl -fsS http://localhost:18080/actuator/health/liveness
+```
 
 ## Recommended Merge Strategy
 
@@ -48,3 +50,4 @@ Example placeholders:
 - Use short-lived feature branches.
 - Keep PR scope small for easier review.
 - Rebase or merge main frequently to reduce conflicts.
+- Add local validation output summary in PR descriptions.

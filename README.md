@@ -105,3 +105,4 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 - Contribution workflow and PR checklist: `CONTRIBUTING.md`
 - Branch protection setup guidance: `docs/branch-protection.md`
 - Default reviewer ownership: `.github/CODEOWNERS`
+- CI cost policy: GitHub Actions is intentionally disabled by default; use local containerized validation before merge.

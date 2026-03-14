@@ -8,8 +8,15 @@ Thanks for contributing to copilot_context_management_mcp.
 2. Keep branch scope small and focused.
 3. Run tests locally before opening a PR.
 4. Open a Pull Request into main.
-5. Wait for required reviews and CI checks.
+5. Wait for required reviews.
 6. Squash merge after approval.
+
+## CI Cost Policy
+
+- GitHub Actions is intentionally not used for this repository.
+- Do not add required GitHub Action checks to branch protection.
+- Validation is local-only using containerized Maven and Compose smoke tests.
+- Include local validation evidence in each PR description.
 
 ## Branch Naming
 
@@ -41,12 +48,13 @@ Examples:
 Before requesting review, verify all items:
 
 - [ ] Branch is up to date with main
-- [ ] Build is green
+- [ ] Local build is green
 - [ ] Tests pass locally
 - [ ] No secrets were committed
 - [ ] Documentation updated (if behavior changed)
 - [ ] Screenshots attached (for UI changes)
 - [ ] Migration notes added (if infra/runtime changed)
+- [ ] Local validation command output summary added to PR
 
 ## Local Validation
 
@@ -72,5 +80,6 @@ curl -fsS http://localhost:18080/actuator/health/liveness
 ## Merge Policy
 
 - Direct pushes to main should be disabled in repository settings.
-- Use Pull Requests with required approvals and required status checks.
+- Use Pull Requests with required approvals.
+- Keep branch protection status checks unset unless an approved zero-cost CI option is adopted.
 - Prefer squash merge to keep main history concise.
