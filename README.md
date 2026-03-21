@@ -61,6 +61,7 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 - Tool: `find_similar_implementations` for locating local implementation patterns that should be reused instead of reinvented.
 - Tool: `get_project_readiness` for preflight gating decisions before invoking analysis tools.
 - Tool: `get_project_guidance` for discovering project standards, deployment instructions, and secret locations from local guidance files.
+- Tool: `get_tool_catalog` for returning MCP tool names plus fully-qualified Copilot agent tool IDs (`<serverName>/<toolName>`).
 - `get_project_guidance` prioritizes secret-file references declared in `copilot-instructions.md` (for example custom secret file paths) before fallback guidance-file patterns.
 - `get_project_guidance` also supports explicit instruction keys such as `secret_file: path/to/secrets.yml` (plus `secrets_file`, `secret_path`, `secrets_path`) for deterministic secret-location discovery.
 - Tool: `get_orchestration_plan` for a single-call package of readiness defaults plus argument templates for all core MCP context/planning tools.
