@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ToolCatalogTool {
 
-    private static final String DEFAULT_SERVER_NAME = "copilotContextManagement";
+        private static final String DEFAULT_SERVER_NAME = "SpringAI-Coder-Bench";
 
     private static final List<String> TOOL_NAMES = List.of(
             "analyze_impacted_files",
@@ -30,7 +30,7 @@ public class ToolCatalogTool {
             description = "Return the MCP tool names and fully-qualified Copilot agent tool IDs for this server.")
     public ToolCatalog get_tool_catalog(
             @McpToolParam(
-                            description = "Optional MCP server name prefix used by Copilot agent tool IDs. Defaults to 'copilotContextManagement'.",
+                            description = "Optional MCP server name prefix used by Copilot agent tool IDs. Defaults to 'SpringAI-Coder-Bench'.",
                             required = false)
                     String serverName) {
         String resolvedServerName = (serverName == null || serverName.isBlank())

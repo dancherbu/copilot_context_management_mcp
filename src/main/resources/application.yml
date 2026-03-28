@@ -24,15 +24,16 @@ spring:
   ai:
     model:
       chat: ollama
+      embedding: ollama
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
       init:
         pull-model-strategy: never
       chat:
         options:
-          model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder:7b}
+          model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder:14b}
           temperature: 0.1
-          num-ctx: 4096
+          num-ctx: ${OLLAMA_NUM_CTX:8192}
       embedding:
         options:
           model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
@@ -74,8 +75,9 @@ ccm:
   security:
     api-key: ${CCM_API_KEY:}
   ollama:
-    chat-model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder:7b}
+    chat-model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder:14b}
     embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    local-only: ${CCM_LOCAL_ONLY_INFERENCE:true}
   ignore:
     builtins:
       - .git

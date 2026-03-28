@@ -77,6 +77,7 @@ public class CcmProperties {
     public static class Ollama {
         private String chatModel;
         private String embeddingModel;
+        private boolean localOnly = true;
 
         public String getChatModel() {
             return chatModel;
@@ -92,6 +93,14 @@ public class CcmProperties {
 
         public void setEmbeddingModel(String embeddingModel) {
             this.embeddingModel = embeddingModel;
+        }
+
+        public boolean isLocalOnly() {
+            return localOnly;
+        }
+
+        public void setLocalOnly(boolean localOnly) {
+            this.localOnly = localOnly;
         }
     }
 

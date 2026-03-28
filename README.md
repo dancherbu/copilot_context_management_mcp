@@ -44,11 +44,13 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 ## Notes
 
 - The app assumes Ollama is already running on the host and reachable at `host.docker.internal:11434`.
-- Set `OLLAMA_CHAT_MODEL` to a model that is actually installed in your local Ollama instance. The impact-analysis tool now falls back to deterministic vector-based results if the configured chat model is unavailable, but a valid local chat model still gives better reasoning.
+- The default chat model is `qwen2.5-coder:14b`, which is a good local step-up for a 24 GB GPU. Set `OLLAMA_CHAT_MODEL` to any model that is installed in your local Ollama instance.
+- For larger models (for example 32B), tune `OLLAMA_NUM_CTX` down (for example `4096`) to keep MCP tool latency acceptable.
+- Local-only inference is enforced by default (`CCM_LOCAL_ONLY_INFERENCE=true`). Startup is blocked if `OLLAMA_BASE_URL` points to a non-local endpoint unless you explicitly set `CCM_LOCAL_ONLY_INFERENCE=false`.
 - The mounted projects directory is read-only by design.
 - Logs are written to `/app/logs/application.log` inside the container and surfaced via the MCP resource.
 - The proxied MCP SSE endpoint is `/sse`, which advertises the message endpoint `/mcp/message`.
-- A `404` at `/` is expected for this service; validate the server with `/actuator/health/liveness` or the MCP endpoints instead.
+- Opening `ccm-mcp.local/` now serves the built-in metrics UI directly (same page as `/mcp-metrics.html`).
 - A built-in metrics bench is available at `/mcp-metrics.html` to run real MCP tool calls, inspect `estimatedPayloadTokens`, persist benchmark history locally, visualize trend charts, and inspect embedding coverage across the watched projects.
 
 ## MCP Surface
@@ -69,6 +71,14 @@ Standalone Spring Boot MCP server for local codebase indexing, impact analysis, 
 - `get_orchestration_bootstrap` also supports server-managed session state (`orchestrationSessionId`) persisted in Redis (with TTL) and can omit unchanged context payloads with `returnPayloadOnUnchanged=false`.
 - Prompt: `code-review`
 - Resource: `logs://application`
+
+## VS Code MCP setup
+
+1. Ensure the workspace file `.vscode/mcp.json` points to the local SSE endpoint:
+	- `http://127.0.0.1:18080/sse`
+2. In VS Code settings, keep `chat.mcp.autoStart` enabled.
+3. If you want this server available in all workspaces, also register it in user-level MCP config (`~/.config/Code - Insiders/User/mcp.json`).
+4. Reload VS Code window and run `MCP: List Servers` to confirm `SpringAI-Coder-Bench` is `Started` and `Trusted`.
 
 ### Readiness-Gated Client Flow
 

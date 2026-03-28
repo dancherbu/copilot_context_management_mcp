@@ -222,8 +222,12 @@ class McpServerIntegrationTest {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl() + "/mcp-metrics.html"))
                                 .GET()
                                 .build();
+                HttpRequest rootRequest = HttpRequest.newBuilder(URI.create(baseUrl() + "/"))
+                                .GET()
+                                .build();
 
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> rootResponse = client.send(rootRequest, HttpResponse.BodyHandlers.ofString());
                 assertThat(response.statusCode()).isEqualTo(200);
                 assertThat(response.body()).contains("CCM MCP Metrics Bench");
                 assertThat(response.body()).contains("Run Selected Tools");
@@ -231,6 +235,8 @@ class McpServerIntegrationTest {
                 assertThat(response.body()).contains("Preset Suite");
                 assertThat(response.body()).contains("Final Client Payload");
                 assertThat(response.body()).contains("const DEFAULT_API_KEY = \"test-key\";");
+                assertThat(rootResponse.statusCode()).isEqualTo(200);
+                assertThat(rootResponse.body()).contains("CCM MCP Metrics Bench");
         }
 
             @Test

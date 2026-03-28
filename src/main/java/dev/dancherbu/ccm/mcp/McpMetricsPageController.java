@@ -25,7 +25,7 @@ public class McpMetricsPageController {
         this.properties = properties;
     }
 
-    @GetMapping(value = "/mcp-metrics.html", produces = MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = {"/", "/index.html", "/mcp-metrics.html"}, produces = MediaType.TEXT_HTML_VALUE)
     public String metricsPage() throws IOException {
         String template = readTemplate();
         String configuredKey = properties.getSecurity().getApiKey();
